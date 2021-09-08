@@ -1,13 +1,11 @@
 #!/usr/bin/env node
 
-'use strict'
-
-const { PNG }       = require('pngjs')
-const chalk         = require('chalk')
-const fs            = require('fs')
-const getDimensions = require('./extract-dimensions')
-const minimist      = require('minimist')
-const path          = require('path')
+import { PNG }       from 'pngjs'
+import chalk         from 'chalk'
+import fs            from 'fs'
+import getDimensions from './extract-dimensions.js'
+import minimist      from 'minimist'
+import path          from 'path'
 
 
 function printGeneralUsage () {
@@ -21,52 +19,52 @@ function printGeneralUsage () {
 
 
 async function main () {
-  const argv = minimist(process.argv.slice(2))
+    const argv = minimist(process.argv.slice(2))
 
-  if (!argv.input || !argv.length) {
-    printGeneralUsage()
-    process.exit()
-  }
-
-  const inputPath = path.resolve(argv.input)
-
-  const length = parseInt(argv.length, 10)
-
-  const mode = (argv.x !== undefined && argv.y !== undefined && argv.width && argv.height) ? 'direct' : 'auto'
-
-  let dimensions
-  if (mode === 'auto')
-    dimensions = await getDimensions(inputPath, 'in_', length)
-  else {
-    dimensions = {
-      width: parseInt(argv.width, 10),
-      height: parseInt(argv.height, 10),
-      x: parseInt(argv.x, 10),
-      y: parseInt(argv.y, 10)
+    if (!argv.input || !argv.length) {
+        printGeneralUsage()
+        process.exit()
     }
-  }
 
-  console.log(mode, dimensions)
+    const inputPath = path.resolve(argv.input)
 
-  const { x, y, width, height } = dimensions
+    const length = parseInt(argv.length, 10)
 
-  for (let i=0; i < length; i++) {
-    const paddedIdx =  i < 10 ? '0' + i : i
+    const mode = (argv.x !== undefined && argv.y !== undefined && argv.width && argv.height) ? 'direct' : 'auto'
 
-    fs.createReadStream(`${inputPath}/in_${paddedIdx}.png`)
-      .pipe(new PNG())
-      .on('parsed', function () {
-        const sx = x
-        const sy = y
-        const dx = 0
-        const dy = 0
+    let dimensions
+    if (mode === 'auto') {
+        dimensions = await getDimensions(inputPath, 'in_', length)
+    } else {
+      dimensions = {
+          width: parseInt(argv.width, 10),
+          height: parseInt(argv.height, 10),
+          x: parseInt(argv.x, 10),
+          y: parseInt(argv.y, 10)
+      }
+    }
 
-        const dst = new PNG({ width, height })
-        this.bitblt(dst, sx, sy, width, height, dx, dy)
+    console.log(mode, dimensions)
 
-        dst.pack().pipe(fs.createWriteStream(`${inputPath}/out_${paddedIdx}.png`))
-      })
-  }
+    const { x, y, width, height } = dimensions
+
+    for (let i=0; i < length; i++) {
+        const paddedIdx =  i < 10 ? '0' + i : i
+
+        fs.createReadStream(`${inputPath}/in_${paddedIdx}.png`)
+        .pipe(new PNG())
+        .on('parsed', function () {
+            const sx = x
+            const sy = y
+            const dx = 0
+            const dy = 0
+
+            const dst = new PNG({ width, height })
+            this.bitblt(dst, sx, sy, width, height, dx, dy)
+
+            dst.pack().pipe(fs.createWriteStream(`${inputPath}/out_${paddedIdx}.png`))
+        })
+    }
 }
 
 
